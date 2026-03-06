@@ -73,6 +73,13 @@
             margin-bottom: 15px;
         }
         
+        .search-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
         .form-group {
             margin-bottom: 10px;
         }
@@ -130,6 +137,12 @@
         
         .btn-danger {
             background-color: var(--danger);
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
         }
         
         /* Remedies Results Container */
@@ -320,7 +333,6 @@
             padding: 12px;
             border-radius: 8px;
             margin-bottom: 15px;
-            cursor: pointer;
         }
         
         /* Popup Card */
@@ -397,7 +409,10 @@
             
             <!-- Patient Search Section -->
             <div class="card">
-                <h2>Patient Search</h2>
+                <div class="search-header">
+                    <h2>Patient Search</h2>
+                    <button id="newPatient" class="btn-outline"><i class="fas fa-plus"></i> New Patient</button>
+                </div>
                 <div class="search-input-group">
                     <input type="tel" id="patientSearch" placeholder="Cell Number: 999-999-9999">
                     <button id="searchPatient"><i class="fas fa-search"></i></button>
@@ -568,6 +583,7 @@
         const searchRemediesBtn = document.getElementById('searchRemedies');
         const patientSearch = document.getElementById('patientSearch');
         const searchPatientBtn = document.getElementById('searchPatient');
+        const newPatientBtn = document.getElementById('newPatient');
         const patientStatus = document.getElementById('patientStatus');
         const remedyStatus = document.getElementById('remedyStatus');
         const patientForm = document.getElementById('patientForm');
@@ -623,7 +639,7 @@
             const today = getTodayDate();
             if (visitDate) visitDate.value = today;
             
-            // Load remedies database
+            // Load remedies database from Google Sheets
             loadRemediesData();
             
             // Set up event listeners
@@ -641,6 +657,7 @@
             // Search buttons
             searchRemediesBtn.addEventListener('click', searchRemedies);
             searchPatientBtn.addEventListener('click', searchPatient);
+            newPatientBtn.addEventListener('click', showNewPatientFormForNewPatient);
             addPatientBtn.addEventListener('click', addPatient);
             newVisitBtn.addEventListener('click', startNewVisit);
             saveVisitBtn.addEventListener('click', saveVisit);
@@ -708,73 +725,160 @@
                 remedyStatus.textContent = 'Loading remedies database...';
                 remedyStatus.className = 'status-message status-info';
                 
-                // Sample data now includes the "Remedy Number" column
-                remediesData = [
-                    {
-                        "Remedy Name": "Aconitum Napellus", "Potency": "30C", "Remedy Number": "1001",
-                        "BOX Number": "B12", "Section": "A-1", "Type": "Tincture", "Bottle Size": "30ml", 
-                        "BottleCapColor": "Blue", "Manufacturer Brand": "Boiron", "Available": "Yes",
-                        "Reorder Y/N": "No", "Reorder Date": ""
-                    },
-                    {
-                        "Remedy Name": "Arnica Montana", "Potency": "200C", "Remedy Number": "1002", 
-                        "BOX Number": "B07", "Section": "A-2", "Type": "Pellets", "Bottle Size": "15ml", 
-                        "BottleCapColor": "Red", "Manufacturer Brand": "Hyland's", "Available": "Yes",
-                        "Reorder Y/N": "No", "Reorder Date": ""
-                    },
-                    {
-                        "Remedy Name": "Belladonna", "Potency": "30C", "Remedy Number": "1003", 
-                        "BOX Number": "B15", "Section": "A-3", "Type": "Tincture", "Bottle Size": "30ml", 
-                        "BottleCapColor": "Green", "Manufacturer Brand": "Boiron", "Available": "No",
-                        "Reorder Y/N": "Yes", "Reorder Date": "2023-10-15"
-                    },
-                    {
-                        "Remedy Name": "Nux Vomica", "Potency": "200C", "Remedy Number": "1004", 
-                        "BOX Number": "B22", "Section": "B-1", "Type": "Pellets", "Bottle Size": "15ml", 
-                        "BottleCapColor": "Yellow", "Manufacturer Brand": "Hyland's", "Available": "Yes",
-                        "Reorder Y/N": "No", "Reorder Date": ""
-                    },
-                    {
-                        "Remedy Name": "Pulsatilla", "Potency": "30C", "Remedy Number": "1005", 
-                        "BOX Number": "B33", "Section": "B-2", "Type": "Tincture", "Bottle Size": "30ml", 
-                        "BottleCapColor": "Purple", "Manufacturer Brand": "Boiron", "Available": "Yes",
-                        "Reorder Y/N": "Yes", "Reorder Date": "2023-11-20"
-                    },
-                    {
-                        "Remedy Name": "Sulphur", "Potency": "1M", "Remedy Number": "1006", 
-                        "BOX Number": "B41", "Section": "C-1", "Type": "Pellets", "Bottle Size": "15ml", 
-                        "BottleCapColor": "Orange", "Manufacturer Brand": "Hyland's", "Available": "No",
-                        "Reorder Y/N": "No", "Reorder Date": ""
-                    }
-                ];
+                // Use Google Sheets API to fetch actual data
+                const sheetId = extractSheetId(currentSheetUrl);
+                const sheetName = 'Sheet1'; // Adjust if your sheet has a different name
+                const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?key=AIzaSyB9F2N_c-bjP49pFM1d3hd-81XQp_BS2rY`;
                 
-                remedyStatus.textContent = `Loaded ${remediesData.length} remedies. Enter search terms above.`;
+                // Try to fetch from Google Sheets
+                const response = await fetchWithCorsProxy(apiUrl);
+                
+                if (!response.ok) {
+                    // If fetch fails, use extended sample data
+                    throw new Error('Failed to fetch from Google Sheets');
+                }
+                
+                const data = await response.json();
+                remediesData = parseSheetData(data.values);
+                
+                if (!remediesData.length) {
+                    throw new Error('No data returned from sheet');
+                }
+                
+                remedyStatus.textContent = `Loaded ${remediesData.length} remedies from Google Sheets.`;
                 remedyStatus.className = 'status-message status-success';
                 
             } catch (error) {
                 console.error('Error loading remedies:', error);
-                remedyStatus.textContent = 'Error loading remedies. Using sample data.';
-                remedyStatus.className = 'status-message status-error';
-                useSampleRemediesData();
+                // Use comprehensive sample data when Google Sheets is not accessible
+                useExtendedSampleRemediesData();
+                remedyStatus.textContent = 'Connected to sample data (Google Sheets access required for live data)';
+                remedyStatus.className = 'status-message status-info';
             }
         }
         
-        function useSampleRemediesData() {
-            // Use the same sample data as above
+        function parseSheetData(values) {
+            if (!values || values.length < 2) return [];
+            
+            const headers = values[0];
+            const data = [];
+            
+            for (let i = 1; i < values.length; i++) {
+                if (!values[i] || values[i].length === 0) continue;
+                
+                const item = {};
+                headers.forEach((header, index) => {
+                    // Clean header names for consistency
+                    const cleanHeader = header.trim();
+                    item[cleanHeader] = values[i][index] || '';
+                });
+                
+                // Skip empty rows
+                if (item['Remedy Name']) {
+                    data.push(item);
+                }
+            }
+            
+            return data;
+        }
+        
+        function useExtendedSampleRemediesData() {
             remediesData = [
                 {
-                    "Remedy Name": "Aconitum Napellus", "Potency": "30C", "Remedy Number": "1001",
-                    "BOX Number": "B12", "Section": "A-1", "Type": "Tincture", "Bottle Size": "30ml", 
+                    "Remedy Name": "Aconitum Napellus", "Remedy Number": "1001", "BOX Number": "B12", 
+                    "Section": "A-1", "Potency": "30C", "Type": "Tincture", "Bottle Size": "30ml", 
                     "BottleCapColor": "Blue", "Manufacturer Brand": "Boiron", "Available": "Yes",
                     "Reorder Y/N": "No", "Reorder Date": ""
                 },
                 {
-                    "Remedy Name": "Arnica Montana", "Potency": "200C", "Remedy Number": "1002", 
-                    "BOX Number": "B07", "Section": "A-2", "Type": "Pellets", "Bottle Size": "15ml", 
+                    "Remedy Name": "Arnica Montana", "Remedy Number": "1002", "BOX Number": "B07", 
+                    "Section": "A-2", "Potency": "200C", "Type": "Pellets", "Bottle Size": "15ml", 
                     "BottleCapColor": "Red", "Manufacturer Brand": "Hyland's", "Available": "Yes",
+                    "Reorder Y/N": "No", "Reorder Date": ""
+                },
+                {
+                    "Remedy Name": "Belladonna", "Remedy Number": "1003", "BOX Number": "B15", 
+                    "Section": "A-3", "Potency": "30C", "Type": "Tincture", "Bottle Size": "30ml", 
+                    "BottleCapColor": "Green", "Manufacturer Brand": "Boiron", "Available": "No",
+                    "Reorder Y/N": "Yes", "Reorder Date": "2023-10-15"
+                },
+                {
+                    "Remedy Name": "Nux Vomica", "Remedy Number": "1004", "BOX Number": "B22", 
+                    "Section": "B-1", "Potency": "200C", "Type": "Pellets", "Bottle Size": "15ml", 
+                    "BottleCapColor": "Yellow", "Manufacturer Brand": "Hyland's", "Available": "Yes",
+                    "Reorder Y/N": "No", "Reorder Date": ""
+                },
+                {
+                    "Remedy Name": "Pulsatilla", "Remedy Number": "1005", "BOX Number": "B33", 
+                    "Section": "B-2", "Potency": "30C", "Type": "Tincture", "Bottle Size": "30ml", 
+                    "BottleCapColor": "Purple", "Manufacturer Brand": "Boiron", "Available": "Yes",
+                    "Reorder Y/N": "Yes", "Reorder Date": "2023-11-20"
+                },
+                {
+                    "Remedy Name": "Sulphur", "Remedy Number": "1006", "BOX Number": "B41", 
+                    "Section": "C-1", "Potency": "1M", "Type": "Pellets", "Bottle Size": "15ml", 
+                    "BottleCapColor": "Orange", "Manufacturer Brand": "Hyland's", "Available": "No",
+                    "Reorder Y/N": "No", "Reorder Date": ""
+                },
+                {
+                    "Remedy Name": "Bryonia Alba", "Remedy Number": "1007", "BOX Number": "B50", 
+                    "Section": "C-2", "Potency": "30C", "Type": "Tincture", "Bottle Size": "30ml", 
+                    "BottleCapColor": "Brown", "Manufacturer Brand": "Boiron", "Available": "Yes",
+                    "Reorder Y/N": "No", "Reorder Date": ""
+                },
+                {
+                    "Remedy Name": "Chamomilla", "Remedy Number": "1008", "BOX Number": "B55", 
+                    "Section": "C-3", "Potency": "200C", "Type": "Pellets", "Bottle Size": "15ml", 
+                    "BottleCapColor": "Pink", "Manufacturer Brand": "Hyland's", "Available": "Yes",
+                    "Reorder Y/N": "Yes", "Reorder Date": "2023-12-05"
+                },
+                {
+                    "Remedy Name": "Gelsemium", "Remedy Number": "1009", "BOX Number": "B60", 
+                    "Section": "D-1", "Potency": "30C", "Type": "Tincture", "Bottle Size": "30ml", 
+                    "BottleCapColor": "Teal", "Manufacturer Brand": "Boiron", "Available": "No",
+                    "Reorder Y/N": "No", "Reorder Date": ""
+                },
+                {
+                    "Remedy Name": "Rhus Tox", "Remedy Number": "1010", "BOX Number": "B65", 
+                    "Section": "D-2", "Potency": "200C", "Type": "Pellets", "Bottle Size": "15ml", 
+                    "BottleCapColor": "Maroon", "Manufacturer Brand": "Hyland's", "Available": "Yes",
+                    "Reorder Y/N": "No", "Reorder Date": ""
+                },
+                {
+                    "Remedy Name": "Calcarea Carbonica", "Remedy Number": "1011", "BOX Number": "B70", 
+                    "Section": "D-3", "Potency": "30C", "Type": "Tincture", "Bottle Size": "30ml", 
+                    "BottleCapColor": "Gray", "Manufacturer Brand": "Boiron", "Available": "Yes",
+                    "Reorder Y/N": "Yes", "Reorder Date": "2024-01-10"
+                },
+                {
+                    "Remedy Name": "Lycopodium", "Remedy Number": "1012", "BOX Number": "B75", 
+                    "Section": "E-1", "Potency": "200C", "Type": "Pellets", "Bottle Size": "15ml", 
+                    "BottleCapColor": "Lavender", "Manufacturer Brand": "Hyland's", "Available": "Yes",
                     "Reorder Y/N": "No", "Reorder Date": ""
                 }
             ];
+        }
+        
+        function extractSheetId(url) {
+            const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+            return match ? match[1] : '11aZgt8hafBHfu0ZHeuyQH_MS09791YHXy_r-7LWc8KM'; // fallback to your sheet ID
+        }
+        
+        async function fetchWithCorsProxy(url) {
+            const proxies = [
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                url // Try direct access
+            ];
+            
+            for (const proxyUrl of proxies) {
+                try {
+                    const response = await fetch(proxyUrl);
+                    if (response.ok) return response;
+                } catch (e) {
+                    console.log(`Proxy failed: ${proxyUrl}`);
+                }
+            }
+            throw new Error('All proxies failed');
         }
         
         function searchRemedies() {
@@ -794,8 +898,8 @@
                 
                 const hasNumbers = /\d/.test(term);
                 const termResults = remediesData.filter(remedy => {
-                    const name = remedy['Remedy Name'].toLowerCase();
-                    const potency = remedy['Potency'].toLowerCase();
+                    const name = (remedy['Remedy Name'] || '').toLowerCase();
+                    const potency = (remedy['Potency'] || '').toLowerCase();
                     
                     if (hasNumbers) {
                         return potency.includes(term.toLowerCase());
@@ -941,8 +1045,8 @@
         
         function showRemedyPopup(remedy, cardElement) {
             // Update popup content
-            popupName.textContent = remedy['Remedy Name'];
-            popupPotency.textContent = remedy['Potency'];
+            popupName.textContent = remedy['Remedy Name'] || 'N/A';
+            popupPotency.textContent = remedy['Potency'] || 'N/A';
             popupCapColor.textContent = remedy['BottleCapColor'] || 'N/A';
             popupBottleSize.textContent = remedy['Bottle Size'] || 'N/A';
             popupAvailable.textContent = remedy['Available'] || 'No';
@@ -1003,7 +1107,7 @@
                 ${remedy['Reorder Y/N'] === 'Yes' && remedy['Reorder Date'] ? `<p><strong>Reorder Date:</strong> ${formatDateForDisplay(remedy['Reorder Date'])}</p>` : ''}
             `;
             
-            const remedyName = remedy['Remedy Name'].toLowerCase().replace(/\s+/g, '-');
+            const remedyName = (remedy['Remedy Name'] || '').toLowerCase().replace(/\s+/g, '-');
             remedyDetailFrame.src = `${MATERIA_MEDICA_BASE_URL}${remedyName}`;
             detailsModal.style.display = 'flex';
         }
@@ -1025,6 +1129,10 @@
             }
         }
         
+        function showNewPatientFormForNewPatient() {
+            showNewPatientForm('');
+        }
+        
         function showNewPatientForm(phoneVal) {
             patientForm.style.display = 'block';
             patientSummary.style.display = 'none';
@@ -1033,7 +1141,7 @@
             patientStatus.textContent = 'New patient - please complete the form';
             patientStatus.className = 'status-message status-info';
             
-            // Clear form and set phone
+            // Clear form and set phone if provided
             firstName.value = '';
             lastName.value = '';
             phone.value = phoneVal;
