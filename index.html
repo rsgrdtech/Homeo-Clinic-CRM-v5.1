@@ -425,7 +425,7 @@
                     <button id="searchRemedies"><i class="fas fa-search"></i></button>
                 </div>
                 <div id="remedyStatus" class="status-message status-info">
-                    Enter remedies to search (comma-separated)
+                    Loading remedies database...
                 </div>
                 <div id="debugInfo" class="status-message status-debug" style="display: none;">
                     <!-- Debug information will appear here -->
@@ -710,19 +710,31 @@
         }
         
         function toggleDebugInfo() {
+            console.log('Toggle debug button clicked'); // Debug line
+            
             if (debugInfoElement.style.display === 'none') {
                 debugInfoElement.style.display = 'block';
                 toggleDebugBtn.textContent = 'Hide Debug Info';
+                addDebugLog('Debug info displayed');
             } else {
                 debugInfoElement.style.display = 'none';
                 toggleDebugBtn.textContent = 'Show Debug Info';
+                addDebugLog('Debug info hidden');
             }
         }
         
         function addDebugLog(message) {
             const timestamp = new Date().toLocaleTimeString();
             debugInfo += `[${timestamp}] ${message}\n`;
-            debugInfoElement.textContent = debugInfo;
+            
+            // Update the debug info element
+            if (debugInfoElement) {
+                debugInfoElement.textContent = debugInfo;
+                // Auto-scroll to bottom
+                debugInfoElement.scrollTop = debugInfoElement.scrollHeight;
+            }
+            
+            console.log(`[DEBUG] ${message}`); // Also log to console
         }
         
         function getTodayDate() {
@@ -778,9 +790,9 @@
                 
                 // Try different methods to access the data
                 const methods = [
-                    { name: 'Google Sheets API', url: `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?key=AIzaSyB9F2N_c-bjP49pFM1d3hd-81XQp_BS2rY` },
                     { name: 'Published CSV', url: `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${sheetName}` },
-                    { name: 'Export CSV', url: `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&id=${sheetId}&gid=0` }
+                    { name: 'Export CSV', url: `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&id=${sheetId}&gid=0` },
+                    { name: 'Google Sheets API', url: `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?key=AIzaSyB9F2N_c-bjP49pFM1d3hd-81XQp_BS2rY` }
                 ];
                 
                 let response = null;
@@ -810,7 +822,13 @@
                 
                 const data = await response.text();
                 addDebugLog(`Raw response length: ${data.length} characters`);
-                addDebugLog(`First 200 chars: ${data.substring(0, 200)}...`);
+                
+                // Show first 200 chars for debugging
+                if (data.length > 200) {
+                    addDebugLog(`First 200 chars: ${data.substring(0, 200)}...`);
+                } else {
+                    addDebugLog(`Full response: ${data}`);
+                }
                 
                 remediesData = parseSheetData(data, successfulMethod);
                 addDebugLog(`Parsed ${remediesData.length} remedies`);
@@ -826,14 +844,13 @@
             } catch (error) {
                 console.error('Error loading remedies:', error);
                 addDebugLog(`✗ Error: ${error.message}`);
-                addDebugLog('Falling back to sample data');
                 
-                // Use comprehensive sample data when Google Sheets is not accessible
-                useExtendedSampleRemediesData();
-                remedyStatus.textContent = 'Connected to sample data (Google Sheets access failed)';
-                remedyStatus.className = 'status-message status-warning';
+                // NO SAMPLE DATA FALLBACK - Force the app to work only with Google Sheets
+                remediesData = [];
+                remedyStatus.textContent = `ERROR: Cannot load remedies data. ${error.message}`;
+                remedyStatus.className = 'status-message status-error';
                 
-                addDebugLog(`✓ Loaded ${remediesData.length} sample remedies as fallback`);
+                addDebugLog('✗ No remedies loaded - Google Sheets connection required');
             }
         }
         
@@ -910,30 +927,6 @@
             }
         }
         
-        function useExtendedSampleRemediesData() {
-            remediesData = [
-                {
-                    "Remedy Name": "Aconitum Napellus", "Remedy Number": "1001", "BOX Number": "B12", 
-                    "Section": "A-1", "Potency": "30C", "Type": "Tincture", "Bottle Size": "30ml", 
-                    "BottleCapColor": "Blue", "Manufacturer Brand": "Boiron", "Available": "Yes",
-                    "Reorder Y/N": "No", "Reorder Date": ""
-                },
-                {
-                    "Remedy Name": "Arnica Montana", "Remedy Number": "1002", "BOX Number": "B07", 
-                    "Section": "A-2", "Potency": "200C", "Type": "Pellets", "Bottle Size": "15ml", 
-                    "BottleCapColor": "Red", "Manufacturer Brand": "Hyland's", "Available": "Yes",
-                    "Reorder Y/N": "No", "Reorder Date": ""
-                },
-                {
-                    "Remedy Name": "Belladonna", "Remedy Number": "1003", "BOX Number": "B15", 
-                    "Section": "A-3", "Potency": "30C", "Type": "Tincture", "Bottle Size": "30ml", 
-                    "BottleCapColor": "Green", "Manufacturer Brand": "Boiron", "Available": "No",
-                    "Reorder Y/N": "Yes", "Reorder Date": "2023-10-15"
-                }
-                // ... (additional sample remedies)
-            ];
-        }
-        
         function extractSheetId(url) {
             const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
             const sheetId = match ? match[1] : '11aZgt8hafBHfu0ZHeuyQH_MS09791YHXy_r-7LWc8KM';
@@ -942,16 +935,18 @@
         }
         
         async function fetchWithCorsProxy(url) {
+            // Remove any existing API key that might be causing issues
+            const cleanUrl = url.replace(/[?&]key=[^&]*/, '');
+            
             const proxies = [
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-                `https://cors-anywhere.herokuapp.com/${url}`,
-                `https://corsproxy.io/?${encodeURIComponent(url)}`,
-                url // Try direct access last
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}`,
+                `https://corsproxy.io/?${encodeURIComponent(cleanUrl)}`,
+                cleanUrl // Try direct access last
             ];
             
             for (const proxyUrl of proxies) {
                 try {
-                    addDebugLog(`Trying proxy: ${proxyUrl}`);
+                    addDebugLog(`Trying proxy: ${proxyUrl.substring(0, 100)}...`);
                     const response = await fetch(proxyUrl, {
                         method: 'GET',
                         headers: {
@@ -961,13 +956,13 @@
                     });
                     
                     if (response.ok) {
-                        addDebugLog(`✓ Proxy successful: ${proxyUrl}`);
+                        addDebugLog(`✓ Proxy successful: ${proxyUrl.substring(0, 100)}...`);
                         return response;
                     } else {
-                        addDebugLog(`✗ Proxy failed with status ${response.status}: ${proxyUrl}`);
+                        addDebugLog(`✗ Proxy failed with status ${response.status}: ${proxyUrl.substring(0, 100)}...`);
                     }
                 } catch (e) {
-                    addDebugLog(`✗ Proxy error: ${e.message} for ${proxyUrl}`);
+                    addDebugLog(`✗ Proxy error: ${e.message} for ${proxyUrl.substring(0, 100)}...`);
                 }
             }
             throw new Error('All CORS proxies failed');
@@ -983,6 +978,14 @@
             }
             
             addDebugLog(`Searching remedies for: "${searchTerm}"`);
+            
+            // Check if we have any remedies data
+            if (remediesData.length === 0) {
+                remedyStatus.textContent = 'No remedies data available. Please check Google Sheets connection.';
+                remedyStatus.className = 'status-message status-error';
+                addDebugLog('✗ Cannot search - no remedies data loaded');
+                return;
+            }
             
             const terms = searchTerm.split(',').map(t => t.trim()).filter(t => t);
             let results = [];
@@ -1017,6 +1020,8 @@
             displayRemedies(results);
         }
         
+        // ... rest of your functions remain the same ...
+        
         function displayRemedies(remedies) {
             remediesResults.innerHTML = '';
             rightPaneTitle.textContent = 'Remedies Search Results';
@@ -1045,7 +1050,13 @@
                 card.innerHTML = `
                     <div class="remedy-name">${remedy['Remedy Name']} ${remedy['Potency']}</div>
                     <div class="remedy-details">
-                        <div class="remedy-detail-line">
+                        
+			 <div class="remedy-detail-line">
+                            <span>Remedy Name:</span>
+                            <span>${remedy['Remedy Name'] || 'N/A'}</span>
+                        </div>
+
+			<div class="remedy-detail-line">
                             <span>Remedy No:</span>
                             <span>${remedy['Remedy Number'] || 'N/A'}</span>
                         </div>
@@ -1053,10 +1064,10 @@
                             <span>Box:</span>
                             <span>${remedy['BOX Number'] || 'N/A'}</span>
                         </div>
-                        <div class="remedy-detail-line">
+                   <!---     <div class="remedy-detail-line">
                             <span>Section:</span>
                             <span>${remedy['Section'] || 'N/A'}</span>
-                        </div>
+                        </div> -->
                     </div>
                     <div style="margin-top: 10px;">
                         <span class="info-link" title="View remedy details">
@@ -1138,11 +1149,321 @@
             }
         }
         
-        // ... (rest of the functions remain the same as previous code)
+        function showRemedyPopup(remedy, cardElement) {
+            // Update popup content
+            popupName.textContent = remedy['Remedy Name'] || 'N/A';
+            popupPotency.textContent = remedy['Potency'] || 'N/A';
+            popupCapColor.textContent = remedy['BottleCapColor'] || 'N/A';
+            popupBottleSize.textContent = remedy['Bottle Size'] || 'N/A';
+            popupAvailable.textContent = remedy['Available'] || 'No';
+            popupManufacturer.textContent = remedy['Manufacturer Brand'] || 'N/A';
+            popupReorder.textContent = remedy['Reorder Y/N'] || 'No';
+            
+            // Show reorder date only if reorder is yes
+            if (remedy['Reorder Y/N'] === 'Yes' && remedy['Reorder Date']) {
+                popupReorderDate.textContent = formatDateForDisplay(remedy['Reorder Date']);
+                popupReorderDateContainer.style.display = 'flex';
+            } else {
+                popupReorderDateContainer.style.display = 'none';
+            }
+            
+            // Position popup near the card element
+            const rect = cardElement.getBoundingClientRect();
+            remedyPopup.style.left = `${rect.left + window.scrollX}px`;
+            remedyPopup.style.top = `${rect.bottom + window.scrollY + 5}px`;
+            remedyPopup.style.display = 'flex';
+        }
         
-        // Function implementations continue...
-        // [The rest of your JavaScript functions would follow here]
+        function addRemedyToPrescription(remedy) {
+            if (!prescription) return;
+            
+            const remedyKey = `${remedy['Remedy Name']} ${remedy['Potency']}`;
+            
+            // Check if already added
+            if (addedRemedies.has(remedyKey)) {
+                showStatus('Remedy already in prescription', 'info', saveStatus);
+                return;
+            }
+            
+            updatePrescriptionDate(); // Ensure date is set
+            
+            const currentText = prescription.value;
+            const lines = currentText.split('\n');
+            let remediesText = lines.length > 1 ? lines.slice(1).join('\n').trim() : '';
+            
+            if (remediesText && !remediesText.endsWith(',')) remediesText += ', ';
+            remediesText += remedyKey;
+            
+            prescription.value = `Date: ${formatDateForDisplay(visitDate.value)}\n${remediesText}`;
+            addedRemedies.add(remedyKey);
+        }
         
+        function showRemedyDetails(remedy) {
+            remedyDetailContent.innerHTML = `
+                <h4>${remedy['Remedy Name']} ${remedy['Potency']}</h4>
+                <p><strong>Remedy Number:</strong> ${remedy['Remedy Number'] || 'N/A'}</p>
+                <p><strong>Box:</strong> ${remedy['BOX Number'] || 'N/A'}</p>
+                <p><strong>Section:</strong> ${remedy['Section'] || 'N/A'}</p>
+                <p><strong>Type:</strong> ${remedy['Type'] || 'N/A'}</p>
+                <p><strong>Bottle Cap Color:</strong> ${remedy['BottleCapColor'] || 'N/A'}</p>
+                <p><strong>Bottle Size:</strong> ${remedy['Bottle Size'] || 'N/A'}</p>
+                <p><strong>Available:</strong> <span style="color: ${remedy['Available'] === 'Yes' ? 'green' : 'red'}">${remedy['Available'] || 'No'}</span></p>
+                <p><strong>Manufacturer:</strong> ${remedy['Manufacturer Brand'] || 'N/A'}</p>
+                <p><strong>Reordered:</strong> ${remedy['Reorder Y/N'] || 'No'}</p>
+                ${remedy['Reorder Y/N'] === 'Yes' && remedy['Reorder Date'] ? `<p><strong>Reorder Date:</strong> ${formatDateForDisplay(remedy['Reorder Date'])}</p>` : ''}
+            `;
+            
+            const remedyName = (remedy['Remedy Name'] || '').toLowerCase().replace(/\s+/g, '-');
+            remedyDetailFrame.src = `${MATERIA_MEDICA_BASE_URL}${remedyName}`;
+            detailsModal.style.display = 'flex';
+        }
+        
+        function searchPatient() {
+            const phoneVal = patientSearch.value.trim().replace(/\D/g, '');
+            
+            if (!phoneVal) {
+                showStatus('Please enter a phone number', 'error', patientStatus);
+                return;
+            }
+            
+            const patientRecord = getPatientRecord(phoneVal);
+            
+            if (patientRecord) {
+                loadPatient(phoneVal, patientRecord);
+            } else {
+                showNewPatientForm(phoneVal);
+            }
+        }
+        
+        function showNewPatientFormForNewPatient() {
+            showNewPatientForm('');
+        }
+        
+        function showNewPatientForm(phoneVal) {
+            patientForm.style.display = 'block';
+            patientSummary.style.display = 'none';
+            visitForm.style.display = 'none';
+            visitHistory.style.display = 'none';
+            patientStatus.textContent = 'New patient - please complete the form';
+            patientStatus.className = 'status-message status-info';
+            
+            // Clear form and set phone if provided
+            firstName.value = '';
+            lastName.value = '';
+            phone.value = phoneVal;
+            age.value = '';
+            city.value = '';
+            address.value = '';
+            state.value = '';
+            zip.value = '';
+            
+            rightPaneTitle.textContent = 'New Patient Registration';
+            rightPaneSubtitle.textContent = 'Please complete the patient information';
+        }
+        
+        function addPatient() {
+            const firstNameVal = firstName.value.trim();
+            const lastNameVal = lastName.value.trim();
+            const phoneVal = phone.value.trim().replace(/\D/g, '');
+            const ageVal = age.value;
+            
+            if (!firstNameVal || !lastNameVal || !phoneVal || !ageVal) {
+                showStatus('Please fill all required fields', 'error', patientStatus);
+                return;
+            }
+            
+            const patientId = phoneVal;
+            const patientRecord = {
+                firstName: firstNameVal,
+                lastName: lastNameVal,
+                phone: phoneVal,
+                age: ageVal,
+                city: city.value.trim(),
+                address: address.value.trim(),
+                state: state.value,
+                zip: zip.value.trim(),
+                visits: [],
+                createdAt: new Date().toISOString()
+            };
+            
+            if (savePatientRecord(patientId, patientRecord)) {
+                loadPatient(patientId, patientRecord);
+                showStatus('Patient added successfully', 'success', patientStatus);
+            } else {
+                showStatus('Error saving patient', 'error', patientStatus);
+            }
+        }
+        
+        function loadPatient(patientId, patientRecord) {
+            currentPatient = patientId;
+            
+            patientForm.style.display = 'none';
+            patientSummary.style.display = 'block';
+            visitForm.style.display = 'block';
+            
+            patientInfo.innerHTML = `
+                <strong>${patientRecord.firstName} ${patientRecord.lastName}</strong><br>
+                Phone: ${patientRecord.phone}<br>
+                Age: ${patientRecord.age}<br>
+                City: ${patientRecord.city}
+            `;
+            
+            // Load visit history if available
+            if (patientRecord.visits && patientRecord.visits.length > 0) {
+                visitHistory.style.display = 'block';
+                loadVisitHistory(patientRecord.visits);
+            } else {
+                visitHistory.style.display = 'none';
+            }
+            
+            rightPaneTitle.textContent = `Patient: ${patientRecord.firstName} ${patientRecord.lastName}`;
+            rightPaneSubtitle.textContent = `Phone: ${patientRecord.phone} | Visits: ${patientRecord.visits ? patientRecord.visits.length : 0}`;
+            
+            patientStatus.textContent = 'Patient loaded successfully';
+            patientStatus.className = 'status-message status-success';
+        }
+        
+        function loadVisitHistory(visits) {
+            historyList.innerHTML = '';
+            
+            visits.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            visits.forEach(visit => {
+                const item = document.createElement('div');
+                item.className = 'visit-item';
+                item.innerHTML = `
+                    <strong>${formatDateForDisplay(visit.date)}</strong><br>
+                    Symptoms: ${visit.symptoms || 'Not recorded'}<br>
+                    Diagnosis: ${visit.diagnosis || 'Not recorded'}<br>
+                    Prescription: ${visit.prescription || 'None'}
+                `;
+                historyList.appendChild(item);
+            });
+        }
+        
+        function startNewVisit() {
+            symptoms.value = '';
+            diagnosis.value = '';
+            prescription.value = '';
+            addedRemedies.clear();
+            updatePrescriptionDate();
+        }
+        
+        function saveVisit() {
+            if (!currentPatient) {
+                showStatus('No patient selected', 'error', saveStatus);
+                return;
+            }
+            
+            const symptomsVal = symptoms.value.trim();
+            const diagnosisVal = diagnosis.value.trim();
+            const prescriptionVal = prescription.value.trim();
+            
+            const patientRecord = getPatientRecord(currentPatient);
+            if (!patientRecord) {
+                showStatus('Patient record not found', 'error', saveStatus);
+                return;
+            }
+            
+            const visit = {
+                date: visitDate.value || getTodayDate(),
+                symptoms: symptomsVal,
+                diagnosis: diagnosisVal,
+                prescription: prescriptionVal,
+                recordedAt: new Date().toISOString()
+            };
+            
+            patientRecord.visits = patientRecord.visits || [];
+            patientRecord.visits.push(visit);
+            patientRecord.updatedAt = new Date().toISOString();
+            
+            if (savePatientRecord(currentPatient, patientRecord)) {
+                loadVisitHistory(patientRecord.visits);
+                showStatus('Visit saved successfully', 'success', saveStatus);
+                
+                // Clear for next visit
+                setTimeout(() => {
+                    symptoms.value = '';
+                    diagnosis.value = '';
+                    prescription.value = '';
+                    addedRemedies.clear();
+                    updatePrescriptionDate();
+                }, 2000);
+            } else {
+                showStatus('Error saving visit', 'error', saveStatus);
+            }
+        }
+        
+        function repeatPrescription() {
+            const patientRecord = getPatientRecord(currentPatient);
+            if (!patientRecord || !patientRecord.visits || patientRecord.visits.length === 0) {
+                showStatus('No previous visits found', 'error', saveStatus);
+                return;
+            }
+            
+            const lastVisit = patientRecord.visits[patientRecord.visits.length - 1];
+            const lastPrescription = lastVisit.prescription;
+            
+            if (!lastPrescription) {
+                showStatus('No prescription in last visit', 'error', saveStatus);
+                return;
+            }
+            
+            // Extract remedies (skip date line)
+            const lines = lastPrescription.split('\n');
+            let remediesText = '';
+            
+            if (lines.length > 1) {
+                remediesText = lines.slice(1).join('\n').trim();
+            } else {
+                remediesText = lastPrescription;
+            }
+            
+            prescription.value = `Date: ${formatDateForDisplay(getTodayDate())}\n${remediesText}`;
+            showStatus('Last prescription loaded', 'success', saveStatus);
+        }
+        
+        // Storage functions
+        function getAllPatientRecords() {
+            try {
+                const recordsJson = localStorage.getItem(STORAGE_KEY);
+                return recordsJson ? JSON.parse(recordsJson) : {};
+            } catch (e) {
+                console.error('Error reading patient records:', e);
+                return {};
+            }
+        }
+        
+        function savePatientRecord(patientId, patientData) {
+            try {
+                const records = getAllPatientRecords();
+                records[patientId] = patientData;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+                return true;
+            } catch (e) {
+                console.error('Error saving patient record:', e);
+                return false;
+            }
+        }
+        
+        function getPatientRecord(patientId) {
+            const records = getAllPatientRecords();
+            return records[patientId] || null;
+        }
+        
+        function showStatus(message, type, element) {
+            if (!element) return;
+            element.textContent = message;
+            element.className = `status-message status-${type}`;
+            element.style.display = 'block';
+        }
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === detailsModal) {
+                detailsModal.style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>
