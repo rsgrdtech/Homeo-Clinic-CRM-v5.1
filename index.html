@@ -49,47 +49,46 @@
         /* Right Content Pane */
         .right-pane {
             flex: 1;
-            padding: 15px;
+            padding: 20px;
             overflow-y: auto;
         }
         
         header {
             background: linear-gradient(135deg, var(--secondary), var(--dark));
             color: white;
-            padding: 12px;
+            padding: 15px;
             border-radius: 8px;
             margin-bottom: 15px;
         }
         
         h1, h2, h3 {
-            margin-bottom: 12px;
+            margin-bottom: 15px;
         }
         
         .card {
             background: white;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
             padding: 15px;
             margin-bottom: 15px;
         }
         
         .form-group {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         
         label {
             display: block;
-            margin-bottom: 4px;
+            margin-bottom: 5px;
             font-weight: 500;
             color: var(--dark);
-            font-size: 14px;
         }
         
         input, select, textarea {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 5px;
             font-size: 14px;
         }
         
@@ -105,11 +104,11 @@
         }
         
         button {
-            padding: 8px 16px;
+            padding: 8px 15px;
             background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
             transition: background-color 0.3s;
@@ -133,25 +132,35 @@
             background-color: var(--danger);
         }
         
-        /* Remedies Cards Grid */
-        .remedies-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 12px;
-            margin-top: 15px;
-            max-height: 400px;
+        /* Remedies Results Container */
+        .remedies-results-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+            max-height: 300px;
             overflow-y: auto;
         }
         
+        .remedies-row {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        
+        /* Remedy Cards */
         .remedy-card {
+            flex: 0 0 auto;
+            width: 200px;
+            height: 120px;
             border: 1px solid #ddd;
             border-radius: 8px;
             padding: 12px;
             background: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             cursor: pointer;
-            transition: transform 0.2s;
-            min-height: 120px;
+            transition: transform 0.2s, box-shadow 0.2s;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -168,37 +177,1079 @@
         
         .remedy-card.unavailable {
             border-left: 4px solid var(--danger);
+            background-color: #f9f9f9;
         }
         
         .remedy-name {
             font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 4px;
-            line-height: 1.2;
+            font-size: 1em;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .remedy-details {
-            font-size: 12px;
+            font-size: 0.8em;
             color: #666;
-            line-height: 1.3;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
         }
         
-        .remedy-actions {
+        .remedy-detail-line {
             display: flex;
-            justify-content: flex-end;
-            margin-top: 8px;
+            justify-content: space-between;
         }
         
         .info-link {
             color: var(--primary);
             cursor: pointer;
-            font-size: 14px;
+            font-size: 0.9em;
+            align-self: flex-end;
+            padding-top: 5px;
         }
         
-        .remedy-popup {
+        .search-section {
+            margin-bottom: 15px;
+        }
+        
+        .search-input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .search-input-group input {
+            flex: 1;
+        }
+        
+        .patient-form {
+            display: none;
+        }
+        
+        .prescription-text {
+            height: 120px;
+            resize: vertical;
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .visit-history {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .visit-item {
+            border-left: 4px solid var(--primary);
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+        }
+        
+        .details-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #888;
+            z-index: 10;
+        }
+        
+        .remedy-detail-frame {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        
+        .status-message {
+            padding: 8px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+        
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .patient-summary {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+        
+        /* Popup Card */
+        .popup-card {
             position: absolute;
             background: white;
             border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 100;
+            max-width: 300px;
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .popup-detail-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+        }
+        
+        .popup-detail-label {
+            font-weight: bold;
+            color: var(--dark);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .left-pane {
+                width: 100%;
+                height: 40vh;
+            }
+            
+            .right-pane {
+                height: 60vh;
+            }
+            
+            .remedies-row {
+                flex-wrap: wrap;
+                overflow-x: hidden;
+            }
+            
+            .remedy-card {
+                width: calc(50% - 10px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Navigation Pane -->
+        <div class="left-pane">
+            <header>
+                <h1><i class="fas fa-user-md"></i> Patient CRM</h1>
+                <p>Homeopathic Practice Management</p>
+            </header>
+            
+            <!-- Remedies Search Section -->
+            <div class="card search-section">
+                <h2>Remedies Search</h2>
+                <div class="search-input-group">
+                    <input type="text" id="remedySearch" placeholder="e.g., Acon 30, Pho 200">
+                    <button id="searchRemedies"><i class="fas fa-search"></i></button>
+                </div>
+                <div id="remedyStatus" class="status-message status-info">
+                    Enter remedies to search (comma-separated)
+                </div>
+            </div>
+            
+            <!-- Patient Search Section -->
+            <div class="card">
+                <h2>Patient Search</h2>
+                <div class="search-input-group">
+                    <input type="tel" id="patientSearch" placeholder="Cell Number: 999-999-9999">
+                    <button id="searchPatient"><i class="fas fa-search"></i></button>
+                </div>
+                <div id="patientStatus" class="status-message"></div>
+            </div>
+            
+            <!-- Patient Form (Initially Hidden) -->
+            <div class="card patient-form" id="patientForm">
+                <h2>New Patient</h2>
+                <div class="form-group">
+                    <label for="firstName" class="required">First Name</label>
+                    <input type="text" id="firstName">
+                </div>
+                <div class="form-group">
+                    <label for="lastName" class="required">Last Name</label>
+                    <input type="text" id="lastName">
+                </div>
+                <div class="form-group">
+                    <label for="phone" class="required">Cell Phone</label>
+                    <input type="tel" id="phone">
+                </div>
+                <div class="form-group">
+                    <label for="age" class="required">Age</label>
+                    <input type="number" id="age" min="0" max="120">
+                </div>
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <input type="text" id="city">
+                </div>
+                <div class="form-group">
+                    <label for="address">Address</label>
+                    <input type="text" id="address">
+                </div>
+                <div class="form-group">
+                    <label for="state">State</label>
+                    <select id="state">
+                        <option value="">Select State</option>
+                        <option value="CA">California</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="zip">Zip Code</label>
+                    <input type="text" id="zip">
+                </div>
+                <button id="addPatient" class="btn-success"><i class="fas fa-plus"></i> Add Patient</button>
+            </div>
+            
+            <!-- Patient Summary (Initially Hidden) -->
+            <div class="patient-summary" id="patientSummary" style="display: none;">
+                <h3>Current Patient</h3>
+                <div id="patientInfo"></div>
+                <button id="newVisit" class="btn-success" style="margin-top: 10px;">
+                    <i class="fas fa-plus"></i> New Visit
+                </button>
+            </div>
+        </div>
+        
+        <!-- Right Content Pane -->
+        <div class="right-pane">
+            <header>
+                <h2 id="rightPaneTitle">Search Results</h2>
+                <p id="rightPaneSubtitle">Search for remedies or patients to begin</p>
+            </header>
+            
+            <!-- Remedies Results -->
+            <div class="remedies-results-container" id="remediesResults">
+                <!-- Remedies cards will be populated here -->
+            </div>
+            
+            <!-- Visit Form (Initially Hidden) -->
+            <div class="card" id="visitForm" style="display: none;">
+                <h2>Current Visit</h2>
+                <div class="form-group">
+                    <label for="visitDate">Visit Date</label>
+                    <input type="date" id="visitDate">
+                </div>
+                <div class="form-group">
+                    <label for="symptoms">Symptoms</label>
+                    <textarea id="symptoms" placeholder="Enter symptoms separated by semicolons"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="diagnosis">Diagnosis</label>
+                    <textarea id="diagnosis"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="prescription">Prescription</label>
+                    <textarea id="prescription" class="prescription-text"></textarea>
+                </div>
+                <button id="saveVisit" class="btn-success"><i class="fas fa-save"></i> Save Visit</button>
+                <button id="repeatPrescription" class="btn-warning"><i class="fas fa-redo"></i> Repeat Last</button>
+                <div id="saveStatus" class="status-message" style="display: none;"></div>
+            </div>
+            
+            <!-- Visit History -->
+            <div class="card" id="visitHistory" style="display: none;">
+                <h2>Visit History</h2>
+                <div class="visit-history" id="historyList">
+                    <!-- Visit history will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Remedy Detail Modal -->
+    <div class="details-modal" id="detailsModal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeModal">&times;</span>
+            <h3>Remedy Details</h3>
+            <div id="remedyDetailContent"></div>
+            <iframe class="remedy-detail-frame" id="remedyDetailFrame"></iframe>
+        </div>
+    </div>
+    
+    <!-- Remedy Info Popup (for single-click) -->
+    <div class="popup-card" id="remedyPopup">
+        <div class="popup-detail-line">
+            <span class="popup-detail-label">Remedy:</span>
+            <span id="popupName"></span>
+        </div>
+        <div class="popup-detail-line">
+            <span class="popup-detail-label">Potency:</span>
+            <span id="popupPotency"></span>
+        </div>
+        <div class="popup-detail-line">
+            <span class="popup-detail-label">Bottle Cap Color:</span>
+            <span id="popupCapColor"></span>
+        </div>
+        <div class="popup-detail-line">
+            <span class="popup-detail-label">Bottle Size:</span>
+            <span id="popupBottleSize"></span>
+        </div>
+        <div class="popup-detail-line">
+            <span class="popup-detail-label">Available:</span>
+            <span id="popupAvailable"></span>
+        </div>
+        <div class="popup-detail-line">
+            <span class="popup-detail-label">Manufacturer:</span>
+            <span id="popupManufacturer"></span>
+        </div>
+        <div class="popup-detail-line">
+            <span class="popup-detail-label">Reordered:</span>
+            <span id="popupReorder"></span>
+        </div>
+        <div class="popup-detail-line" id="popupReorderDateContainer">
+            <span class="popup-detail-label">Reorder Date:</span>
+            <span id="popupReorderDate"></span>
+        </div>
+        <div style="font-size:0.8em;padding-top:8px">
+            <i>Double-click to add to prescription</i>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/11aZgt8hafBHfu0ZHeuyQH_MS09791YHXy_r-7LWc8KM/edit?usp=sharing';
+        const MATERIA_MEDICA_BASE_URL = 'https://www.materiamedica.info/en/materia-medica/john-henry-clarke/';
+        const STORAGE_KEY = 'homeopathic_patient_records';
+        
+        // State
+        let currentPatient = null;
+        let remediesData = [];
+        let currentSheetUrl = DEFAULT_SHEET_URL;
+        let addedRemedies = new Set();
+        
+        // DOM Elements
+        const remedySearch = document.getElementById('remedySearch');
+        const searchRemediesBtn = document.getElementById('searchRemedies');
+        const patientSearch = document.getElementById('patientSearch');
+        const searchPatientBtn = document.getElementById('searchPatient');
+        const patientStatus = document.getElementById('patientStatus');
+        const remedyStatus = document.getElementById('remedyStatus');
+        const patientForm = document.getElementById('patientForm');
+        const patientSummary = document.getElementById('patientSummary');
+        const patientInfo = document.getElementById('patientInfo');
+        const remediesResults = document.getElementById('remediesResults');
+        const visitForm = document.getElementById('visitForm');
+        const visitHistory = document.getElementById('visitHistory');
+        const historyList = document.getElementById('historyList');
+        const rightPaneTitle = document.getElementById('rightPaneTitle');
+        const rightPaneSubtitle = document.getElementById('rightPaneSubtitle');
+        
+        // Form elements
+        const firstName = document.getElementById('firstName');
+        const lastName = document.getElementById('lastName');
+        const phone = document.getElementById('phone');
+        const age = document.getElementById('age');
+        const city = document.getElementById('city');
+        const address = document.getElementById('address');
+        const state = document.getElementById('state');
+        const zip = document.getElementById('zip');
+        const addPatientBtn = document.getElementById('addPatient');
+        const newVisitBtn = document.getElementById('newVisit');
+        const visitDate = document.getElementById('visitDate');
+        const symptoms = document.getElementById('symptoms');
+        const diagnosis = document.getElementById('diagnosis');
+        const prescription = document.getElementById('prescription');
+        const saveVisitBtn = document.getElementById('saveVisit');
+        const repeatPrescriptionBtn = document.getElementById('repeatPrescription');
+        const saveStatus = document.getElementById('saveStatus');
+        
+        // Modal and popup elements
+        const detailsModal = document.getElementById('detailsModal');
+        const remedyDetailContent = document.getElementById('remedyDetailContent');
+        const remedyDetailFrame = document.getElementById('remedyDetailFrame');
+        const closeModal = document.getElementById('closeModal');
+        const remedyPopup = document.getElementById('remedyPopup');
+        
+        // Popup content elements
+        const popupName = document.getElementById('popupName');
+        const popupPotency = document.getElementById('popupPotency');
+        const popupCapColor = document.getElementById('popupCapColor');
+        const popupBottleSize = document.getElementById('popupBottleSize');
+        const popupAvailable = document.getElementById('popupAvailable');
+        const popupManufacturer = document.getElementById('popupManufacturer');
+        const popupReorder = document.getElementById('popupReorder');
+        const popupReorderDate = document.getElementById('popupReorderDate');
+        const popupReorderDateContainer = document.getElementById('popupReorderDateContainer');
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set today's date as default visit date
+            const today = getTodayDate();
+            if (visitDate) visitDate.value = today;
+            
+            // Load remedies database
+            loadRemediesData();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Set up event to close popup when clicking elsewhere
+            document.addEventListener('click', (e) => {
+                if (!remedyPopup.contains(e.target)) {
+                    remedyPopup.style.display = 'none';
+                }
+            });
+        });
+        
+        function setupEventListeners() {
+            // Search buttons
+            searchRemediesBtn.addEventListener('click', searchRemedies);
+            searchPatientBtn.addEventListener('click', searchPatient);
+            addPatientBtn.addEventListener('click', addPatient);
+            newVisitBtn.addEventListener('click', startNewVisit);
+            saveVisitBtn.addEventListener('click', saveVisit);
+            repeatPrescriptionBtn.addEventListener('click', repeatPrescription);
+            closeModal.addEventListener('click', () => detailsModal.style.display = 'none');
+            
+            // Enable Enter key for searches
+            remedySearch.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchRemedies();
+            });
+            
+            patientSearch.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchPatient();
+            });
+            
+            // Update prescription when date changes
+            if (visitDate) {
+                visitDate.addEventListener('change', updatePrescriptionDate);
+            }
+        }
+        
+        function getTodayDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        function updatePrescriptionDate() {
+            if (!prescription) return;
+            
+            const currentText = prescription.value;
+            const dateString = visitDate ? visitDate.value : getTodayDate();
+            
+            // Remove any existing date header
+            const lines = currentText.split('\n');
+            let remediesText = '';
+            
+            if (lines.length > 0 && lines[0].includes('Date:')) {
+                remediesText = lines.slice(1).join('\n').trim();
+            } else {
+                remediesText = currentText.trim();
+            }
+            
+            // Add new date header
+            const newText = `Date: ${formatDateForDisplay(dateString)}\n${remediesText}`;
+            prescription.value = newText.trim();
+        }
+        
+        function formatDateForDisplay(dateString) {
+            const dateObj = new Date(dateString);
+            if (isNaN(dateObj.getTime())) {
+                return new Date().toLocaleDateString();
+            }
+            return dateObj.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+        
+        async function loadRemediesData() {
+            try {
+                remedyStatus.textContent = 'Loading remedies database...';
+                remedyStatus.className = 'status-message status-info';
+                
+                // Sample data now includes the "Remedy Number" column
+                remediesData = [
+                    {
+                        "Remedy Name": "Aconitum Napellus", "Potency": "30C", "Remedy Number": "1001",
+                        "BOX Number": "B12", "Section": "A-1", "Type": "Tincture", "Bottle Size": "30ml", 
+                        "BottleCapColor": "Blue", "Manufacturer Brand": "Boiron", "Available": "Yes",
+                        "Reorder Y/N": "No", "Reorder Date": ""
+                    },
+                    {
+                        "Remedy Name": "Arnica Montana", "Potency": "200C", "Remedy Number": "1002", 
+                        "BOX Number": "B07", "Section": "A-2", "Type": "Pellets", "Bottle Size": "15ml", 
+                        "BottleCapColor": "Red", "Manufacturer Brand": "Hyland's", "Available": "Yes",
+                        "Reorder Y/N": "No", "Reorder Date": ""
+                    },
+                    {
+                        "Remedy Name": "Belladonna", "Potency": "30C", "Remedy Number": "1003", 
+                        "BOX Number": "B15", "Section": "A-3", "Type": "Tincture", "Bottle Size": "30ml", 
+                        "BottleCapColor": "Green", "Manufacturer Brand": "Boiron", "Available": "No",
+                        "Reorder Y/N": "Yes", "Reorder Date": "2023-10-15"
+                    },
+                    {
+                        "Remedy Name": "Nux Vomica", "Potency": "200C", "Remedy Number": "1004", 
+                        "BOX Number": "B22", "Section": "B-1", "Type": "Pellets", "Bottle Size": "15ml", 
+                        "BottleCapColor": "Yellow", "Manufacturer Brand": "Hyland's", "Available": "Yes",
+                        "Reorder Y/N": "No", "Reorder Date": ""
+                    },
+                    {
+                        "Remedy Name": "Pulsatilla", "Potency": "30C", "Remedy Number": "1005", 
+                        "BOX Number": "B33", "Section": "B-2", "Type": "Tincture", "Bottle Size": "30ml", 
+                        "BottleCapColor": "Purple", "Manufacturer Brand": "Boiron", "Available": "Yes",
+                        "Reorder Y/N": "Yes", "Reorder Date": "2023-11-20"
+                    },
+                    {
+                        "Remedy Name": "Sulphur", "Potency": "1M", "Remedy Number": "1006", 
+                        "BOX Number": "B41", "Section": "C-1", "Type": "Pellets", "Bottle Size": "15ml", 
+                        "BottleCapColor": "Orange", "Manufacturer Brand": "Hyland's", "Available": "No",
+                        "Reorder Y/N": "No", "Reorder Date": ""
+                    }
+                ];
+                
+                remedyStatus.textContent = `Loaded ${remediesData.length} remedies. Enter search terms above.`;
+                remedyStatus.className = 'status-message status-success';
+                
+            } catch (error) {
+                console.error('Error loading remedies:', error);
+                remedyStatus.textContent = 'Error loading remedies. Using sample data.';
+                remedyStatus.className = 'status-message status-error';
+                useSampleRemediesData();
+            }
+        }
+        
+        function useSampleRemediesData() {
+            // Use the same sample data as above
+            remediesData = [
+                {
+                    "Remedy Name": "Aconitum Napellus", "Potency": "30C", "Remedy Number": "1001",
+                    "BOX Number": "B12", "Section": "A-1", "Type": "Tincture", "Bottle Size": "30ml", 
+                    "BottleCapColor": "Blue", "Manufacturer Brand": "Boiron", "Available": "Yes",
+                    "Reorder Y/N": "No", "Reorder Date": ""
+                },
+                {
+                    "Remedy Name": "Arnica Montana", "Potency": "200C", "Remedy Number": "1002", 
+                    "BOX Number": "B07", "Section": "A-2", "Type": "Pellets", "Bottle Size": "15ml", 
+                    "BottleCapColor": "Red", "Manufacturer Brand": "Hyland's", "Available": "Yes",
+                    "Reorder Y/N": "No", "Reorder Date": ""
+                }
+            ];
+        }
+        
+        function searchRemedies() {
+            const searchTerm = remedySearch.value.trim();
+            
+            if (!searchTerm) {
+                remedyStatus.textContent = 'Please enter remedy names/potencies';
+                remedyStatus.className = 'status-message status-error';
+                return;
+            }
+            
+            const terms = searchTerm.split(',').map(t => t.trim()).filter(t => t);
+            let results = [];
+            
+            terms.forEach(term => {
+                if (!term) return;
+                
+                const hasNumbers = /\d/.test(term);
+                const termResults = remediesData.filter(remedy => {
+                    const name = remedy['Remedy Name'].toLowerCase();
+                    const potency = remedy['Potency'].toLowerCase();
+                    
+                    if (hasNumbers) {
+                        return potency.includes(term.toLowerCase());
+                    } else {
+                        return name.includes(term.toLowerCase());
+                    }
+                });
+                
+                results = [...results, ...termResults];
+            });
+            
+            // Remove duplicates
+            results = results.filter((remedy, index, self) => 
+                index === self.findIndex(r => 
+                    r['Remedy Name'] === remedy['Remedy Name'] && 
+                    r['Potency'] === remedy['Potency']
+                )
+            );
+            
+            displayRemedies(results);
+        }
+        
+        function displayRemedies(remedies) {
+            remediesResults.innerHTML = '';
+            rightPaneTitle.textContent = 'Remedies Search Results';
+            rightPaneSubtitle.textContent = `Found ${remedies.length} remedies`;
+            
+            if (remedies.length === 0) {
+                remediesResults.innerHTML = '<p>No remedies found.</p>';
+                return;
+            }
+            
+            // Create rows for remedies display (2 rows maximum with horizontal scrolling)
+            const remediesCount = remedies.length;
+            const remediesPerRow = Math.ceil(remediesCount / 2);
+            
+            let row1 = document.createElement('div');
+            row1.className = 'remedies-row';
+            
+            let row2 = document.createElement('div');
+            row2.className = 'remedies-row';
+            
+            remedies.forEach((remedy, index) => {
+                const isAvailable = remedy['Available'] === 'Yes';
+                const card = document.createElement('div');
+                card.className = `remedy-card ${isAvailable ? 'available' : 'unavailable'}`;
+                
+                card.innerHTML = `
+                    <div class="remedy-name">${remedy['Remedy Name']} ${remedy['Potency']}</div>
+                    <div class="remedy-details">
+                        <div class="remedy-detail-line">
+                            <span>Remedy No:</span>
+                            <span>${remedy['Remedy Number'] || 'N/A'}</span>
+                        </div>
+                        <div class="remedy-detail-line">
+                            <span>Box:</span>
+                            <span>${remedy['BOX Number'] || 'N/A'}</span>
+                        </div>
+                        <div class="remedy-detail-line">
+                            <span>Section:</span>
+                            <span>${remedy['Section'] || 'N/A'}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <span class="info-link" title="View remedy details">
+                            <i class="fas fa-info-circle"></i> Info
+                        </span>
+                    </div>
+                `;
+                
+                // Show popup on single click
+                let clickTimer;
+                card.addEventListener('click', (e) => {
+                    // Prevent triggering if it's part of a double-click
+                    clearTimeout(clickTimer);
+                    
+                    // Single click - show popup with details
+                    if (e.target.closest('.info-link')) {
+                        // Info icon clicked - show detail modal
+                        showRemedyDetails(remedy);
+                        return;
+                    }
+                    
+                    // Single click elsewhere on card - show popup
+                    clickTimer = setTimeout(() => {
+                        showRemedyPopup(remedy, card);
+                    }, 200);
+                });
+                
+                // Double-click to add to prescription
+                card.addEventListener('dblclick', (e) => {
+                    clearTimeout(clickTimer);
+                    
+                    if (isAvailable) {
+                        addRemedyToPrescription(remedy);
+                        remedyPopup.style.display = 'none'; // Close popup if open
+                        
+                        // Show confirmation message
+                        const statusMsg = document.createElement('div');
+                        statusMsg.textContent = `${remedy['Remedy Name']} ${remedy['Potency']} added to prescription`;
+                        statusMsg.style.cssText = `
+                            position: fixed;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                            background: var(--success);
+                            color: white;
+                            padding: 10px 20px;
+                            border-radius: 5px;
+                            z-index: 200;
+                            font-weight: bold;
+                        `;
+                        document.body.appendChild(statusMsg);
+                        
+                        setTimeout(() => {
+                            document.body.removeChild(statusMsg);
+                        }, 1500);
+                    } else {
+                        showStatus('Remedy not available', 'error', saveStatus);
+                    }
+                });
+                
+                // Show details on info icon click
+                const infoLink = card.querySelector('.info-link');
+                infoLink.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showRemedyDetails(remedy);
+                });
+                
+                // Add to appropriate row
+                if (index < remediesPerRow) {
+                    row1.appendChild(card);
+                } else {
+                    row2.appendChild(card);
+                }
+            });
+            
+            remediesResults.appendChild(row1);
+            if (remediesCount > remediesPerRow) {
+                remediesResults.appendChild(row2);
+            }
+        }
+        
+        function showRemedyPopup(remedy, cardElement) {
+            // Update popup content
+            popupName.textContent = remedy['Remedy Name'];
+            popupPotency.textContent = remedy['Potency'];
+            popupCapColor.textContent = remedy['BottleCapColor'] || 'N/A';
+            popupBottleSize.textContent = remedy['Bottle Size'] || 'N/A';
+            popupAvailable.textContent = remedy['Available'] || 'No';
+            popupManufacturer.textContent = remedy['Manufacturer Brand'] || 'N/A';
+            popupReorder.textContent = remedy['Reorder Y/N'] || 'No';
+            
+            // Show reorder date only if reorder is yes
+            if (remedy['Reorder Y/N'] === 'Yes' && remedy['Reorder Date']) {
+                popupReorderDate.textContent = formatDateForDisplay(remedy['Reorder Date']);
+                popupReorderDateContainer.style.display = 'flex';
+            } else {
+                popupReorderDateContainer.style.display = 'none';
+            }
+            
+            // Position popup near the card element
+            const rect = cardElement.getBoundingClientRect();
+            remedyPopup.style.left = `${rect.left + window.scrollX}px`;
+            remedyPopup.style.top = `${rect.bottom + window.scrollY + 5}px`;
+            remedyPopup.style.display = 'flex';
+        }
+        
+        function addRemedyToPrescription(remedy) {
+            if (!prescription) return;
+            
+            const remedyKey = `${remedy['Remedy Name']} ${remedy['Potency']}`;
+            
+            // Check if already added
+            if (addedRemedies.has(remedyKey)) {
+                showStatus('Remedy already in prescription', 'info', saveStatus);
+                return;
+            }
+            
+            updatePrescriptionDate(); // Ensure date is set
+            
+            const currentText = prescription.value;
+            const lines = currentText.split('\n');
+            let remediesText = lines.length > 1 ? lines.slice(1).join('\n').trim() : '';
+            
+            if (remediesText && !remediesText.endsWith(',')) remediesText += ', ';
+            remediesText += remedyKey;
+            
+            prescription.value = `Date: ${formatDateForDisplay(visitDate.value)}\n${remediesText}`;
+            addedRemedies.add(remedyKey);
+        }
+        
+        function showRemedyDetails(remedy) {
+            remedyDetailContent.innerHTML = `
+                <h4>${remedy['Remedy Name']} ${remedy['Potency']}</h4>
+                <p><strong>Remedy Number:</strong> ${remedy['Remedy Number'] || 'N/A'}</p>
+                <p><strong>Box:</strong> ${remedy['BOX Number'] || 'N/A'}</p>
+                <p><strong>Section:</strong> ${remedy['Section'] || 'N/A'}</p>
+                <p><strong>Type:</strong> ${remedy['Type'] || 'N/A'}</p>
+                <p><strong>Bottle Cap Color:</strong> ${remedy['BottleCapColor'] || 'N/A'}</p>
+                <p><strong>Bottle Size:</strong> ${remedy['Bottle Size'] || 'N/A'}</p>
+                <p><strong>Available:</strong> <span style="color: ${remedy['Available'] === 'Yes' ? 'green' : 'red'}">${remedy['Available'] || 'No'}</span></p>
+                <p><strong>Manufacturer:</strong> ${remedy['Manufacturer Brand'] || 'N/A'}</p>
+                <p><strong>Reordered:</strong> ${remedy['Reorder Y/N'] || 'No'}</p>
+                ${remedy['Reorder Y/N'] === 'Yes' && remedy['Reorder Date'] ? `<p><strong>Reorder Date:</strong> ${formatDateForDisplay(remedy['Reorder Date'])}</p>` : ''}
+            `;
+            
+            const remedyName = remedy['Remedy Name'].toLowerCase().replace(/\s+/g, '-');
+            remedyDetailFrame.src = `${MATERIA_MEDICA_BASE_URL}${remedyName}`;
+            detailsModal.style.display = 'flex';
+        }
+        
+        function searchPatient() {
+            const phoneVal = patientSearch.value.trim().replace(/\D/g, '');
+            
+            if (!phoneVal) {
+                showStatus('Please enter a phone number', 'error', patientStatus);
+                return;
+            }
+            
+            const patientRecord = getPatientRecord(phoneVal);
+            
+            if (patientRecord) {
+                loadPatient(phoneVal, patientRecord);
+            } else {
+                showNewPatientForm(phoneVal);
+            }
+        }
+        
+        function showNewPatientForm(phoneVal) {
+            patientForm.style.display = 'block';
+            patientSummary.style.display = 'none';
+            visitForm.style.display = 'none';
+            visitHistory.style.display = 'none';
+            patientStatus.textContent = 'New patient - please complete the form';
+            patientStatus.className = 'status-message status-info';
+            
+            // Clear form and set phone
+            firstName.value = '';
+            lastName.value = '';
+            phone.value = phoneVal;
+            age.value = '';
+            city.value = '';
+            address.value = '';
+            state.value = '';
+            zip.value = '';
+            
+            rightPaneTitle.textContent = 'New Patient Registration';
+            rightPaneSubtitle.textContent = 'Please complete the patient information';
+        }
+        
+        function addPatient() {
+            const firstNameVal = firstName.value.trim();
+            const lastNameVal = lastName.value.trim();
+            const phoneVal = phone.value.trim().replace(/\D/g, '');
+            const ageVal = age.value;
+            
+            if (!firstNameVal || !lastNameVal || !phoneVal || !ageVal) {
+                showStatus('Please fill all required fields', 'error', patientStatus);
+                return;
+            }
+            
+            const patientId = phoneVal;
+            const patientRecord = {
+                firstName: firstNameVal,
+                lastName: lastNameVal,
+                phone: phoneVal,
+                age: ageVal,
+                city: city.value.trim(),
+                address: address.value.trim(),
+                state: state.value,
+                zip: zip.value.trim(),
+                visits: [],
+                createdAt: new Date().toISOString()
+            };
+            
+            if (savePatientRecord(patientId, patientRecord)) {
+                loadPatient(patientId, patientRecord);
+                showStatus('Patient added successfully', 'success', patientStatus);
+            } else {
+                showStatus('Error saving patient', 'error', patientStatus);
+            }
+        }
+        
+        function loadPatient(patientId, patientRecord) {
+            currentPatient = patientId;
+            
+            patientForm.style.display = 'none';
+            patientSummary.style.display = 'block';
+            visitForm.style.display = 'block';
+            
+            patientInfo.innerHTML = `
+                <strong>${patientRecord.firstName} ${patientRecord.lastName}</strong><br>
+                Phone: ${patientRecord.phone}<br>
+                Age: ${patientRecord.age}<br>
+                City: ${patientRecord.city}
+            `;
+            
+            // Load visit history if available
+            if (patientRecord.visits && patientRecord.visits.length > 0) {
+                visitHistory.style.display = 'block';
+                loadVisitHistory(patientRecord.visits);
+            } else {
+                visitHistory.style.display = 'none';
+            }
+            
+            rightPaneTitle.textContent = `Patient: ${patientRecord.firstName} ${patientRecord.lastName}`;
+            rightPaneSubtitle.textContent = `Phone: ${patientRecord.phone} | Visits: ${patientRecord.visits ? patientRecord.visits.length : 0}`;
+            
+            patientStatus.textContent = 'Patient loaded successfully';
+            patientStatus.className = 'status-message status-success';
+        }
+        
+        function loadVisitHistory(visits) {
+            historyList.innerHTML = '';
+            
+            visits.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            visits.forEach(visit => {
+                const item = document.createElement('div');
+                item.className = 'visit-item';
+                item.innerHTML = `
+                    <strong>${formatDateForDisplay(visit.date)}</strong><br>
+                    Symptoms: ${visit.symptoms || 'Not recorded'}<br>
+                    Diagnosis: ${visit.diagnosis || 'Not recorded'}<br>
+                    Prescription: ${visit.prescription || 'None'}
+                `;
+                historyList.appendChild(item);
+            });
+        }
+        
+        function startNewVisit() {
+            symptoms.value = '';
+            diagnosis.value = '';
+            prescription.value = '';
+            addedRemedies.clear();
+            updatePrescriptionDate();
+        }
+        
+        function saveVisit() {
+            if (!currentPatient) {
+                showStatus('No patient selected', 'error', saveStatus);
+                return;
+            }
+            
+            const symptomsVal = symptoms.value.trim();
+            const diagnosisVal = diagnosis.value.trim();
+            const prescriptionVal = prescription.value.trim();
+            
+            const patientRecord = getPatientRecord(currentPatient);
+            if (!patientRecord) {
+                showStatus('Patient record not found', 'error', saveStatus);
+                return;
+            }
+            
+            const visit = {
+                date: visitDate.value || getTodayDate(),
+                symptoms: symptomsVal,
+                diagnosis: diagnosisVal,
+                prescription: prescriptionVal,
+                recordedAt: new Date().toISOString()
+            };
+            
+            patientRecord.visits = patientRecord.visits || [];
+            patientRecord.visits.push(visit);
+            patientRecord.updatedAt = new Date().toISOString();
+            
+            if (savePatientRecord(currentPatient, patientRecord)) {
+                loadVisitHistory(patientRecord.visits);
+                showStatus('Visit saved successfully', 'success', saveStatus);
+                
+                // Clear for next visit
+                setTimeout(() => {
+                    symptoms.value = '';
+                    diagnosis.value = '';
+                    prescription.value = '';
+                    addedRemedies.clear();
+                    updatePrescriptionDate();
+                }, 2000);
+            } else {
+                showStatus('Error saving visit', 'error', saveStatus);
+            }
+        }
+        
+        function repeatPrescription() {
+            const patientRecord = getPatientRecord(currentPatient);
+            if (!patientRecord || !patientRecord.visits || patientRecord.visits.length === 0) {
+                showStatus('No previous visits found', 'error', saveStatus);
+                return;
+            }
+            
+            const lastVisit = patientRecord.visits[patientRecord.visits.length - 1];
+            const lastPrescription = lastVisit.prescription;
+            
+            if (!lastPrescription) {
+                showStatus('No prescription in last visit', 'error', saveStatus);
+                return;
+            }
+            
+            // Extract remedies (skip date line)
+            const lines = lastPrescription.split('\n');
+            let remediesText = '';
+            
+            if (lines.length > 1) {
+                remediesText = lines.slice(1).join('\n').trim();
+            } else {
+                remediesText = lastPrescription;
+            }
+            
+            prescription.value = `Date: ${formatDateForDisplay(getTodayDate())}\n${remediesText}`;
+            showStatus('Last prescription loaded', 'success', saveStatus);
+        }
+        
+        // Storage functions
+        function getAllPatientRecords() {
+            try {
+                const recordsJson = localStorage.getItem(STORAGE_KEY);
+                return recordsJson ? JSON.parse(recordsJson) : {};
+            } catch (e) {
+                console.error('Error reading patient records:', e);
+                return {};
+            }
+        }
+        
+        function savePatientRecord(patientId, patientData) {
+            try {
+                const records = getAllPatientRecords();
+                records[patientId] = patientData;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+                return true;
+            } catch (e) {
+                console.error('Error saving patient record:', e);
+                return false;
+            }
+        }
+        
+        function getPatientRecord(patientId) {
+            const records = getAllPatientRecords();
+            return records[patientId] || null;
+        }
+        
+        function showStatus(message, type, element) {
+            if (!element) return;
+            element.textContent = message;
+            element.className = `status-message status-${type}`;
+            element.style.display = 'block';
+        }
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === detailsModal) {
+                detailsModal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
